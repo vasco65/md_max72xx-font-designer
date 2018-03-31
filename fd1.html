@@ -1,0 +1,1016 @@
+<html>
+<!--
+    Copyright (C) 2018 Antonio Vasconcelos. All rights reserved.
+
+    This tool is free software; you can redistribute  it  and/or
+    modify it under the terms of the GNU Lesser  General  Public
+    License as published by the Free Software Foundation; either
+    version 2.1 of the License, or (at your  option)  any  later
+    version.
+
+    This tool is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied  warranty
+    of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See
+    the GNU Lesser General Public License for more details.
+
+    You should have received a copy of the  GNU  Lesser  General
+    Public License along  with  this  tool;  if  not,  write  to
+    the Free Software Foundation, Inc., 51  Franklin  St,  Fifth
+    Floor, Boston, MA 02110-1301 USA
+-->
+<head>
+ <meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+ <meta name="author" content="Antonio Vasconcelos (vasco)">
+ <meta name="description" content="Font designer for MD_MAX72XX / MD_PAROLA lib">
+ <meta name="version" content="1.0">
+ <meta name="date" content="2018.03.31">
+<title>MD_MAX72XX font builder</title>
+<style>
+body {
+        background-color:3030a0;
+        text-color:#c0c0c0;
+        font:14pt "Trebuchet MS", Helvetica, sans-serif;
+        color:#c3c3c3;
+}
+table, td, th {
+    border: 1px solid #c3c3c3;
+}
+td {
+	width:40px;
+	height:40px;
+}
+
+input[type=button] {
+	margin:0px;
+	padding:0px;
+	float:left;
+}
+select {
+	padding:0px;
+	background-color:#5050c0;
+	color:#c3c3c3;
+	border:none;
+}
+.output {
+	font:7pt Inconsolata;
+	border-style:none;
+	border-width:1px;
+	border-color:black;
+	background-color:#404040;
+	text-color:white;
+}
+
+#control {
+	position:fixed;
+	top:200;
+	left:720;
+	width:512;
+	padding:0;
+	margin:0;
+	border-style:none;
+}
+</style>
+<script>
+	// Variaveis Globais
+	var charSet=[];
+	var matrix=[];
+	var x,y;
+	var Max_X=8; // valor inicial e' 8x8
+	var Max_Y=8;
+	var EOL='\n';
+	// e' possivel que exista uma maneira mais pratica
+	// de definir um array de 16x16, mas ha' muitas coisas
+	// em que o meu conhecimento de JS e' um bocado basico
+	for(y=0;y<16;y++)
+	{
+			matrix[y]=[];
+	}
+	for(y=0;y<16;y++)
+	{
+		for(x=0;x<16;x++)
+		{
+			matrix[y][x]='0';
+		}
+	}
+
+	/////////////////////////////////////////////////////
+
+	function clearMatrix() // coloca a matriz a zeros
+	{
+		var x,y,id;
+	
+		for(y=0;y<Max_Y;y++)
+		{
+			for(x=0;x<Max_X;x++)
+			{
+				matrix[y][x]='0';
+			}
+		}
+		plotMatrix();
+		plotGrid();
+		showValues();
+	}			
+
+
+
+	function plotMatrix() // faz o plot da matrix no canvas
+	{
+		var c=document.getElementById("img");
+		var ctx=c.getContext("2d");
+		var xx, yy, x, y;
+		ctx.strokeStyle="yellow";
+		ctx.fillStyle="yellow";
+		ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+		for(yy=0;yy<Max_Y;yy++)
+		{
+			y=4+yy*8;
+			for(xx=0;xx<Max_X;xx++)
+			{
+				x=4+xx*8;
+				if(matrix[yy][xx]=='1')
+				{
+					ctx.fillStyle="red";
+				}
+				else
+				{
+					ctx.fillStyle="#303030";
+				}
+				ctx.beginPath();
+				ctx.arc(x,y,4,0,2*Math.PI);
+				ctx.fill();
+			}
+		}
+	}
+	function plotGrid() // desenha a area de trabalho
+	{
+		var x,y,id,g;
+
+		for(y=0;y<16;y++)
+		{
+			for(x=0;x<16;x++)
+			{
+				id='a'+y.toString(16)+x.toString(16);
+				g=document.getElementById(id);
+				if( (x>=Max_X) || (y>=Max_Y) )
+				{
+					g.style.backgroundColor="black";
+					g.style.cursor="not-allowed";
+				}
+				else
+				{
+					if(matrix[y][x]=='1')
+					{
+						g.style.backgroundColor="orange";
+					}
+					else
+					{
+						g.style.backgroundColor="transparent";
+					}
+					g.style.cursor="crosshair";
+				}
+			}
+		}
+	}
+
+	function SetReset(me) // set/reset de um ponto
+	{
+		var x,y,id;
+		id=me.id;
+		y=parseInt(id.charAt(1),16);
+		x=parseInt(id.charAt(2),16);
+
+		if( (y>=Max_Y) || (x>=Max_X) )
+		{
+			return;
+		}
+
+		
+		if(me.style.backgroundColor=="transparent" || me.style.backgroundColor=="")
+		{
+			me.style.backgroundColor="orange";
+			matrix[y][x]='1';
+		}
+		else
+		{
+			me.style.backgroundColor="transparent";
+			matrix[y][x]='0';
+		}
+		plotMatrix();
+		showValues();
+	}
+
+	function rollUp() // rola a matrix um ponto para cima
+	{
+		var carry=[];
+		var f,x,y;
+		for(f=0;f<Max_X;f++)
+		{
+			carry[f]=matrix[0][f];
+		}
+		for(y=0;y<(Max_Y-1);y++)
+		{
+			for(x=0;x<Max_X;x++)
+			{
+				matrix[y][x]=matrix[(y+1)][x];
+			}
+		}
+		for(f=0;f<Max_X;f++)
+		{
+			matrix[(Max_Y-1)][f]=carry[f];
+		}
+		plotMatrix();
+		plotGrid();
+		showValues();
+	}
+	
+	function rollDown() // rola a matriz um ponto para baixo
+	{
+		var carry=[];
+		var f,x,y;
+		for(f=0;f<Max_X;f++)
+		{
+			carry[f]=matrix[(Max_Y-1)][f];
+		}
+		for(y=(Max_Y-1);y>0;y--)
+		{
+			for(x=0;x<Max_X;x++)
+			{
+				matrix[y][x]=matrix[(y-1)][x];
+			}
+		}
+		for(f=0;f<Max_X;f++)
+		{
+			matrix[0][f]=carry[f];
+		}
+		plotMatrix();
+		plotGrid();
+		showValues();
+	}
+
+	function rollRight() // rola a matriz um ponto para a direita
+	{
+		var carry=[]; // vai guardar a coluna e nao a linha
+		var f,x,y;
+
+		for(f=0;f<Max_Y;f++)
+		{
+			carry[f]=matrix[f][(Max_X-1)];
+		}
+		for(x=(Max_X-1);x>0;x--)
+		{
+			for(y=0;y<Max_Y;y++)
+			{
+				matrix[y][x]=matrix[y][(x-1)];
+			}
+		}
+		for(f=0;f<Max_Y;f++)
+		{
+			matrix[f][0]=carry[f];
+		}
+		plotMatrix();
+		plotGrid();
+		showValues();
+	}
+
+	function rollLeft() // rola a matriz um ponto para a esquerda
+	{
+		var carry=[]; // vai guardar a coluna e não a linha
+		var f,x,y;
+
+		for(f=0;f<Max_Y;f++)
+		{
+			carry[f]=matrix[f][0];
+		}
+		for(x=0;x<(Max_X-1);x++)
+		{
+			for(y=0;y<Max_Y;y++)
+			{
+				matrix[y][x]=matrix[y][(x+1)];
+			}
+		}
+		for(f=0;f<Max_Y;f++)
+		{
+			matrix[f][(Max_X-1)]=carry[f];
+		}
+		plotMatrix();
+		plotGrid();
+		showValues();
+	}
+
+	function invertMatrix() // inverte a matriz, no sentido em que o que esta a 0 passa a 1 e vice-versa
+	{
+		var x,y;
+		for(y=0;y<Max_Y;y++)
+		{
+			for(x=0;x<Max_X;x++)
+			{
+				if(matrix[y][x]=='1')
+				{
+					matrix[y][x]='0';
+				}
+				else
+				{
+					matrix[y][x]='1';
+				}
+			}
+		}
+		plotMatrix();
+		plotGrid();
+		showValues();
+	}
+
+	function flipMatrixH() // faz o flip horizontal da matriz
+	{
+		var matrix2=[];
+		var f,x,y;
+		for(y=0;y<16;y++)
+        	{
+			matrix2[y]=[];
+		}
+		for(y=0;y<Max_Y;y++)
+		{
+			for(x=0;x<Max_X;x++)
+			{
+				matrix2[y][x]=matrix[y][((Max_X-1)-x)];
+			}
+		}
+		matrix=matrix2;
+		plotMatrix();
+		plotGrid();
+		showValues();
+	}
+	
+	function flipMatrixV() // faz o flip vertical da matriz
+	{
+		var matrix2=[];
+		var f,x,y;
+		for(y=0;y<16;y++)
+		{
+			matrix2[y]=[];
+		}
+		for(x=0;x<Max_X;x++)
+		{
+			for(y=0;y<Max_Y;y++)
+			{
+				matrix2[y][x]=matrix[((Max_Y-1)-y)][x];
+			}
+		}
+		matrix=matrix2;
+		plotMatrix();
+		plotGrid();
+		showValues();
+	}
+
+	function setWidth() // altera a largura de um caracter
+	{
+		var newW;
+
+		newW=document.getElementById("width").value;
+
+		if( (newW<1) || (newW>16) )
+		{
+			return;
+		}
+		Max_X=newW;
+		plotMatrix();
+		plotGrid();
+		showValues();
+	}
+
+	function showValues(xx) // mostra na textarea os valores numericos do caracter atualmente na grid
+	{
+		var x,y;
+		var bitStr='',hexa;
+		var t;
+		var c,v;
+
+		t=document.getElementById("output");
+		if(xx=='undef')
+		{
+			t.value='undef';
+			return(false);
+		}
+		t.value=Max_X;
+
+		for(x=0;x<Max_X;x++)
+		{
+			bitStr='';
+			for(y=7;y>=0;y--)
+			{
+				bitStr=bitStr+matrix[y][x];
+			}
+			hexa=parseInt(bitStr, 2).toString(16);
+			t.value=t.value+', 0x'+hexa;
+
+		}
+		c=document.getElementById('char2load');
+		v=parseInt(c.value);
+		if(v>=0 || v<=255)
+		{
+			t.value=t.value+' // char '+v;
+			if(v>=32)
+			{
+				t.value=t.value+' - "'+String.fromCharCode(v)+'"';
+			}
+		}
+		if(Max_Y<16)
+		{
+			return;
+		}
+		t.value=t.value+'\n'+Max_X;
+		for(x=0;x<Max_X;x++)
+		{
+			bitStr='';
+			for(y=15;y>=8;y--)
+			{
+				bitStr=bitStr+matrix[y][x];
+			}
+			hexa=parseInt(bitStr, 2).toString(16);
+			t.value=t.value+', 0x'+hexa;
+		}
+		if(v>=0 || v<=255)
+		{
+			t.value=t.value+' // char '+(128+v)+' - "'+String.fromCharCode((128+v))+'"';
+		}
+	}
+
+
+	function saveChar() // grava o conteudo da grid para o array charSet
+	{
+		// um char de dupla altura e' gravado para o char x e para o x+128
+		var o;
+		var x,y;
+		var v;
+		o=document.getElementById('char2save');
+		v=parseInt(o.value); // e' necessario porque o o.value e' uma string, sem isto 4+1=41 em vez de 5
+		if(v < 0 || v > 255)
+		{
+			alert('Invalid char id, must be a number between 0 and 255');
+			return(false);
+		}
+		if(Max_Y==16 && v>=128)
+		{
+			alert('Invalid char id, with double height chars it must be a number between 0 and 127');
+			return(false);
+		}
+
+		charSet[v]=[];
+		for(y=0;y<8;y++)
+		{
+			charSet[v][y]=[];
+		}
+		if(Max_Y==16)
+		{
+			charSet[(v+128)]=[];
+			for(y=0;y<8;y++)
+			{
+				charSet[(v+128)][y]=[];
+			}
+		}
+		for(y=0;y<8;y++)
+		{
+			for(x=0;x<16;x++)
+			{
+				charSet[v][y][x]=matrix[y][x];
+			}
+		}
+		// a largura de um char e' guardado na 17a posicao da primeira linha do caracter
+		// comecou por ser uma martelada, mas depois de pensar no assunto nao encontro uma
+		// maneira melhor
+		charSet[v][0][16]=Max_X; // guardar largura do char
+		if(Max_Y==16) // e' dupla altura, guardar a metade inferior em o.value+128
+		{
+			charSet[(v+128)][0][16]=Max_X; // a largura tambem tem que ser guardada na metade inferior
+			for(y=0;y<8;y++)
+			{
+				for(x=0;x<16;x++)
+				{
+					charSet[(v+128)][y][x]=matrix[(y+8)][x];
+				}
+			}
+		}
+		o.value=(v+1);
+		clearMatrix();
+		plotMatrix();
+		plotGrid();
+		showValues();
+	}
+
+	function loadChar() // carrega a matriz a partir de array charSet
+	{
+		var o,s;
+		var x,y;
+		var v;
+		o=document.getElementById('char2load');
+		v=parseInt(o.value);
+		if(v < 0 || v > 255)
+		{
+			alert('Invalid char id, must be a number between 0 and 255');
+			return(false);
+		}
+		if(Max_Y==16 && v >=128)
+		{
+			alert('Invalid char id, with double height chars it must be a number between 0 and 127');
+			return(false);
+		}
+		if(typeof(charSet[v])== 'undefined')
+		{
+			// alert('Nothing is saved at char '+v); // e' discutivel se vale a pena apresentar um erro
+			showValues('undef'); // talvez esta nao seja a melhor solucao
+			return(false);
+		}
+		clearMatrix();
+		Max_X=charSet[v][0][16]; // carregar a largura do char
+		s=document.getElementById('width');
+                s.selectedIndex=(parseInt(Max_X)-1); // definir o indice do select
+
+		for(y=0;y<8;y++)
+		{
+			for(x=0;x<16;x++)
+			{
+				matrix[y][x]=charSet[v][y][x];
+			}
+		}
+		if(Max_Y==16)
+		{
+			for(y=0;y<8;y++)
+			{
+				for(x=0;x<16;x++)
+				{
+					matrix[(y+8)][x]=charSet[(v+128)][y][x];
+				}
+			}
+		}
+		plotMatrix();
+		plotGrid();
+		showValues();
+	}
+
+	function loadNextChar() // incrementa o numero do caracter e faz o load a partir do array charSet
+	{
+		var o,v;
+		o=document.getElementById('char2load');
+		v=parseInt(o.value);
+		if(v>=255)
+		{
+			return(false);
+		}
+		o.value=(v+1);
+		loadChar();
+	}
+
+	function loadPrevChar() // decrementa o numero do caracter e faz o load a partir do array charSet
+	{
+		var o,v;
+		o=document.getElementById('char2load');
+		v=parseInt(o.value);
+		if(v<1)
+		{
+			return(false);
+		}
+		o.value=(v-1);
+		loadChar();
+	}
+
+	// from >>>>> https://stackoverflow.com/questions/13405129/javascript-create-and-save-file
+	// nao faco a minima ideia como isto funciona
+	function downloadFile(data, filename, type) 
+	{
+		var file = new Blob([data], {type: type});
+		if (window.navigator.msSaveOrOpenBlob) // IE10+
+		{
+			window.navigator.msSaveOrOpenBlob(file, filename);
+		}
+		else
+		{ // Others
+			var a = document.createElement("a"),
+			url = URL.createObjectURL(file);
+			a.href = url;
+			a.download = filename;
+			document.body.appendChild(a);
+			a.click();
+			setTimeout(function() {
+				document.body.removeChild(a);
+				window.URL.revokeObjectURL(url);  
+			}, 0); 
+		}
+	}
+
+	function exportFont()
+	{
+		// cria um 'ficheiro' dentro da variavel buffer contendo os valores do array myFont
+		var buffer;
+		var f,x,y,l,bitStr,hexa;
+		var s;
+
+		buffer='MD_MAX72XX::fontType_t myFont[] PROGMEM = {'+EOL;
+
+		for(f=0;f<256;f++)
+		{
+			if(typeof(charSet[f])== 'undefined')
+			{
+				buffer+='    0, // char '+f+EOL;
+			}
+			else
+			{
+				l=parseInt(charSet[f][0][16]); // largura do caracter
+				buffer+='    '+l+', ';
+				for(x=0;x<l;x++)
+				{
+					bitStr='';
+					for(y=7;y>=0;y--)
+					{
+						bitStr+=charSet[f][y][x];
+					}
+					hexa=parseInt(bitStr, 2).toString(16);
+					buffer+='0x'+hexa+', ';
+				}
+				buffer+='// char '+f;
+				if(f>=32)
+				{
+					buffer+=' - "'+String.fromCharCode(f)+'"'+EOL;
+				}
+			}
+				
+		}
+		buffer+='};'+EOL;
+		downloadFile(buffer,'myFont.h','text/plain');
+	}
+
+	function setup() // definicao dos valores iniciais
+	{
+		var s;
+
+		s=document.getElementById('width');
+		s.selectedIndex=7;
+		s=document.getElementById('h2');
+		s.checked='0';
+		s=document.getElementById('h1');
+		s.checked='1';
+		s=document.getElementById('char2load');
+		s.value='0';
+		s=document.getElementById('char2save');
+		s.value='0';
+
+		clearMatrix();
+		plotMatrix();
+		plotGrid();
+		showValues();
+	}
+
+</script>
+</head>
+<body bgcolor=#3030a0 onLoad="setup();" style="font:9pt Inconsolata;">
+<div id=pic style="position:fixed;top:2;left:720;width:128;height:128;padding:0;margin:0;">
+<canvas id=img width=128 height=128 style="">No canvas support</canvas>
+</div>
+<div id=control>
+<form name=ctrl>
+<input type=button value="Clear" onClick="clearMatrix();">
+<input type=button value="Invert" onClick="invertMatrix();">
+<input type=button value="Flip H" onClick="flipMatrixH();">
+<input type=button value="Flip V" onClick="flipMatrixV();">
+<input type=button value="Left" onClick="rollLeft();">
+<input type=button value="Up" onClick="rollUp();">
+<input type=button value="Down" onClick="rollDown();">
+<input type=button value="Right" onClick="rollRight();">
+<br><br>
+<input type=radio id=h1 name=h value=1 onClick="Max_Y=8; plotMatrix(); plotGrid(); showValues();" checked> Single height&nbsp;
+<input type=radio id=h2 name=h value=2 onClick="Max_Y=16; plotMatrix(); plotGrid(); showValues();"> Double height&nbsp;
+Width:<select name=width id=width onChange="setWidth();">
+<option value=1>1</option>
+<option value=2>2</option>
+<option value=3>3</option>
+<option value=4>4</option>
+<option value=5>5</option>
+<option value=6>6</option>
+<option value=7>7</option>
+<option value=8 selected>8</option>
+<option value=9>9</option>
+<option value=10>10</option>
+<option value=11>11</option>
+<option value=12>12</option>
+<option value=13>13</option>
+<option value=14>14</option>
+<option value=15>15</option>
+<option value=16>16</option>
+</select>
+<br>
+Values:<br>
+<textarea id=output ROWS=4 COLS=60></textarea>
+<br>
+<table cellpadding=0 cellspacing=0 style="border:0px none black;">
+<tr>
+<td nowrap style="border:0px none black;">Save to char:</td>
+<td style="border:0px none black;"><input type=text name=char2save id=char2save maxlength=3 size=3></td>
+<td style="border:0px none black;"><input type=button value="Save" style="float:none;margin-left:10px;" onClick="saveChar();"></td>
+</tr><tr>
+<td nowrap style="border:0px none black;">Load from char:</td>
+<td style="border:0px none black;"><input type=text name=char2load id=char2load maxlength=3 size=3></td>
+<td style="border:0px none black;"><input type=button value="Load" style="float:none;margin-left:10px;" onClick="loadChar();"></td>
+<td style="border:0px none black;"><input type=button value="&nbsp;-&nbsp;" style="float:none;margin-left:10px;" onClick="loadPrevChar();"></td>
+<td style="border:0px none black;"><input type=button value="&nbsp;+&nbsp;" style="float:none;margin-left:10px;" onClick="loadNextChar();"></td>
+</tr>
+<tr>
+<td colspan=3 align=left style="border:0px none black;"><input type=button value="Export to myFont.h" style="float:none;margin-left:10px;" onClick="exportFont();"></td>
+</tr>
+<tr>
+<td nowrap colspan=3 style="border:0px none black;">File Format: <input type=radio id=eol name=eol value=0 checked onClick="EOL='\n';">&nbsp;Unix&nbsp;&nbsp;&nbsp;<input type=radio id=eol name=eol value=1 onClick="EOL='\r\n';">&nbsp;MS-DOS</td>
+</tr>
+</table>
+</form>
+</div>
+<div id=grid style="position:fixed;top:2;left:2;">
+<table style="border-spacing:0px;border-collapse:collapse;">
+<tr>
+<td id=a00 onClick="SetReset(this);">&nbsp;</td>
+<td id=a01 onClick="SetReset(this);">&nbsp;</td>
+<td id=a02 onClick="SetReset(this);">&nbsp;</td>
+<td id=a03 onClick="SetReset(this);">&nbsp;</td>
+<td id=a04 onClick="SetReset(this);">&nbsp;</td>
+<td id=a05 onClick="SetReset(this);">&nbsp;</td>
+<td id=a06 onClick="SetReset(this);">&nbsp;</td>
+<td id=a07 onClick="SetReset(this);">&nbsp;</td>
+<td id=a08 onClick="SetReset(this);">&nbsp;</td>
+<td id=a09 onClick="SetReset(this);">&nbsp;</td>
+<td id=a0a onClick="SetReset(this);">&nbsp;</td>
+<td id=a0b onClick="SetReset(this);">&nbsp;</td>
+<td id=a0c onClick="SetReset(this);">&nbsp;</td>
+<td id=a0d onClick="SetReset(this);">&nbsp;</td>
+<td id=a0e onClick="SetReset(this);">&nbsp;</td>
+<td id=a0f onClick="SetReset(this);">&nbsp;</td>
+</tr>
+<tr>
+<td id=a10 onClick="SetReset(this);">&nbsp;</td>
+<td id=a11 onClick="SetReset(this);">&nbsp;</td>
+<td id=a12 onClick="SetReset(this);">&nbsp;</td>
+<td id=a13 onClick="SetReset(this);">&nbsp;</td>
+<td id=a14 onClick="SetReset(this);">&nbsp;</td>
+<td id=a15 onClick="SetReset(this);">&nbsp;</td>
+<td id=a16 onClick="SetReset(this);">&nbsp;</td>
+<td id=a17 onClick="SetReset(this);">&nbsp;</td>
+<td id=a18 onClick="SetReset(this);">&nbsp;</td>
+<td id=a19 onClick="SetReset(this);">&nbsp;</td>
+<td id=a1a onClick="SetReset(this);">&nbsp;</td>
+<td id=a1b onClick="SetReset(this);">&nbsp;</td>
+<td id=a1c onClick="SetReset(this);">&nbsp;</td>
+<td id=a1d onClick="SetReset(this);">&nbsp;</td>
+<td id=a1e onClick="SetReset(this);">&nbsp;</td>
+<td id=a1f onClick="SetReset(this);">&nbsp;</td>
+</tr>
+<tr>
+<td id=a20 onClick="SetReset(this);">&nbsp;</td>
+<td id=a21 onClick="SetReset(this);">&nbsp;</td>
+<td id=a22 onClick="SetReset(this);">&nbsp;</td>
+<td id=a23 onClick="SetReset(this);">&nbsp;</td>
+<td id=a24 onClick="SetReset(this);">&nbsp;</td>
+<td id=a25 onClick="SetReset(this);">&nbsp;</td>
+<td id=a26 onClick="SetReset(this);">&nbsp;</td>
+<td id=a27 onClick="SetReset(this);">&nbsp;</td>
+<td id=a28 onClick="SetReset(this);">&nbsp;</td>
+<td id=a29 onClick="SetReset(this);">&nbsp;</td>
+<td id=a2a onClick="SetReset(this);">&nbsp;</td>
+<td id=a2b onClick="SetReset(this);">&nbsp;</td>
+<td id=a2c onClick="SetReset(this);">&nbsp;</td>
+<td id=a2d onClick="SetReset(this);">&nbsp;</td>
+<td id=a2e onClick="SetReset(this);">&nbsp;</td>
+<td id=a2f onClick="SetReset(this);">&nbsp;</td>
+</tr>
+<tr>
+<td id=a30 onClick="SetReset(this);">&nbsp;</td>
+<td id=a31 onClick="SetReset(this);">&nbsp;</td>
+<td id=a32 onClick="SetReset(this);">&nbsp;</td>
+<td id=a33 onClick="SetReset(this);">&nbsp;</td>
+<td id=a34 onClick="SetReset(this);">&nbsp;</td>
+<td id=a35 onClick="SetReset(this);">&nbsp;</td>
+<td id=a36 onClick="SetReset(this);">&nbsp;</td>
+<td id=a37 onClick="SetReset(this);">&nbsp;</td>
+<td id=a38 onClick="SetReset(this);">&nbsp;</td>
+<td id=a39 onClick="SetReset(this);">&nbsp;</td>
+<td id=a3a onClick="SetReset(this);">&nbsp;</td>
+<td id=a3b onClick="SetReset(this);">&nbsp;</td>
+<td id=a3c onClick="SetReset(this);">&nbsp;</td>
+<td id=a3d onClick="SetReset(this);">&nbsp;</td>
+<td id=a3e onClick="SetReset(this);">&nbsp;</td>
+<td id=a3f onClick="SetReset(this);">&nbsp;</td>
+</tr>
+<tr>
+<td id=a40 onClick="SetReset(this);">&nbsp;</td>
+<td id=a41 onClick="SetReset(this);">&nbsp;</td>
+<td id=a42 onClick="SetReset(this);">&nbsp;</td>
+<td id=a43 onClick="SetReset(this);">&nbsp;</td>
+<td id=a44 onClick="SetReset(this);">&nbsp;</td>
+<td id=a45 onClick="SetReset(this);">&nbsp;</td>
+<td id=a46 onClick="SetReset(this);">&nbsp;</td>
+<td id=a47 onClick="SetReset(this);">&nbsp;</td>
+<td id=a48 onClick="SetReset(this);">&nbsp;</td>
+<td id=a49 onClick="SetReset(this);">&nbsp;</td>
+<td id=a4a onClick="SetReset(this);">&nbsp;</td>
+<td id=a4b onClick="SetReset(this);">&nbsp;</td>
+<td id=a4c onClick="SetReset(this);">&nbsp;</td>
+<td id=a4d onClick="SetReset(this);">&nbsp;</td>
+<td id=a4e onClick="SetReset(this);">&nbsp;</td>
+<td id=a4f onClick="SetReset(this);">&nbsp;</td>
+</tr>
+<tr>
+<td id=a50 onClick="SetReset(this);">&nbsp;</td>
+<td id=a51 onClick="SetReset(this);">&nbsp;</td>
+<td id=a52 onClick="SetReset(this);">&nbsp;</td>
+<td id=a53 onClick="SetReset(this);">&nbsp;</td>
+<td id=a54 onClick="SetReset(this);">&nbsp;</td>
+<td id=a55 onClick="SetReset(this);">&nbsp;</td>
+<td id=a56 onClick="SetReset(this);">&nbsp;</td>
+<td id=a57 onClick="SetReset(this);">&nbsp;</td>
+<td id=a58 onClick="SetReset(this);">&nbsp;</td>
+<td id=a59 onClick="SetReset(this);">&nbsp;</td>
+<td id=a5a onClick="SetReset(this);">&nbsp;</td>
+<td id=a5b onClick="SetReset(this);">&nbsp;</td>
+<td id=a5c onClick="SetReset(this);">&nbsp;</td>
+<td id=a5d onClick="SetReset(this);">&nbsp;</td>
+<td id=a5e onClick="SetReset(this);">&nbsp;</td>
+<td id=a5f onClick="SetReset(this);">&nbsp;</td>
+</tr>
+<tr>
+<td id=a60 onClick="SetReset(this);">&nbsp;</td>
+<td id=a61 onClick="SetReset(this);">&nbsp;</td>
+<td id=a62 onClick="SetReset(this);">&nbsp;</td>
+<td id=a63 onClick="SetReset(this);">&nbsp;</td>
+<td id=a64 onClick="SetReset(this);">&nbsp;</td>
+<td id=a65 onClick="SetReset(this);">&nbsp;</td>
+<td id=a66 onClick="SetReset(this);">&nbsp;</td>
+<td id=a67 onClick="SetReset(this);">&nbsp;</td>
+<td id=a68 onClick="SetReset(this);">&nbsp;</td>
+<td id=a69 onClick="SetReset(this);">&nbsp;</td>
+<td id=a6a onClick="SetReset(this);">&nbsp;</td>
+<td id=a6b onClick="SetReset(this);">&nbsp;</td>
+<td id=a6c onClick="SetReset(this);">&nbsp;</td>
+<td id=a6d onClick="SetReset(this);">&nbsp;</td>
+<td id=a6e onClick="SetReset(this);">&nbsp;</td>
+<td id=a6f onClick="SetReset(this);">&nbsp;</td>
+</tr>
+<tr>
+<td id=a70 onClick="SetReset(this);">&nbsp;</td>
+<td id=a71 onClick="SetReset(this);">&nbsp;</td>
+<td id=a72 onClick="SetReset(this);">&nbsp;</td>
+<td id=a73 onClick="SetReset(this);">&nbsp;</td>
+<td id=a74 onClick="SetReset(this);">&nbsp;</td>
+<td id=a75 onClick="SetReset(this);">&nbsp;</td>
+<td id=a76 onClick="SetReset(this);">&nbsp;</td>
+<td id=a77 onClick="SetReset(this);">&nbsp;</td>
+<td id=a78 onClick="SetReset(this);">&nbsp;</td>
+<td id=a79 onClick="SetReset(this);">&nbsp;</td>
+<td id=a7a onClick="SetReset(this);">&nbsp;</td>
+<td id=a7b onClick="SetReset(this);">&nbsp;</td>
+<td id=a7c onClick="SetReset(this);">&nbsp;</td>
+<td id=a7d onClick="SetReset(this);">&nbsp;</td>
+<td id=a7e onClick="SetReset(this);">&nbsp;</td>
+<td id=a7f onClick="SetReset(this);">&nbsp;</td>
+</tr>
+<tr>
+<td id=a80 onClick="SetReset(this);">&nbsp;</td>
+<td id=a81 onClick="SetReset(this);">&nbsp;</td>
+<td id=a82 onClick="SetReset(this);">&nbsp;</td>
+<td id=a83 onClick="SetReset(this);">&nbsp;</td>
+<td id=a84 onClick="SetReset(this);">&nbsp;</td>
+<td id=a85 onClick="SetReset(this);">&nbsp;</td>
+<td id=a86 onClick="SetReset(this);">&nbsp;</td>
+<td id=a87 onClick="SetReset(this);">&nbsp;</td>
+<td id=a88 onClick="SetReset(this);">&nbsp;</td>
+<td id=a89 onClick="SetReset(this);">&nbsp;</td>
+<td id=a8a onClick="SetReset(this);">&nbsp;</td>
+<td id=a8b onClick="SetReset(this);">&nbsp;</td>
+<td id=a8c onClick="SetReset(this);">&nbsp;</td>
+<td id=a8d onClick="SetReset(this);">&nbsp;</td>
+<td id=a8e onClick="SetReset(this);">&nbsp;</td>
+<td id=a8f onClick="SetReset(this);">&nbsp;</td>
+</tr>
+<tr>
+<td id=a90 onClick="SetReset(this);">&nbsp;</td>
+<td id=a91 onClick="SetReset(this);">&nbsp;</td>
+<td id=a92 onClick="SetReset(this);">&nbsp;</td>
+<td id=a93 onClick="SetReset(this);">&nbsp;</td>
+<td id=a94 onClick="SetReset(this);">&nbsp;</td>
+<td id=a95 onClick="SetReset(this);">&nbsp;</td>
+<td id=a96 onClick="SetReset(this);">&nbsp;</td>
+<td id=a97 onClick="SetReset(this);">&nbsp;</td>
+<td id=a98 onClick="SetReset(this);">&nbsp;</td>
+<td id=a99 onClick="SetReset(this);">&nbsp;</td>
+<td id=a9a onClick="SetReset(this);">&nbsp;</td>
+<td id=a9b onClick="SetReset(this);">&nbsp;</td>
+<td id=a9c onClick="SetReset(this);">&nbsp;</td>
+<td id=a9d onClick="SetReset(this);">&nbsp;</td>
+<td id=a9e onClick="SetReset(this);">&nbsp;</td>
+<td id=a9f onClick="SetReset(this);">&nbsp;</td>
+</tr>
+<tr>
+<td id=aa0 onClick="SetReset(this);">&nbsp;</td>
+<td id=aa1 onClick="SetReset(this);">&nbsp;</td>
+<td id=aa2 onClick="SetReset(this);">&nbsp;</td>
+<td id=aa3 onClick="SetReset(this);">&nbsp;</td>
+<td id=aa4 onClick="SetReset(this);">&nbsp;</td>
+<td id=aa5 onClick="SetReset(this);">&nbsp;</td>
+<td id=aa6 onClick="SetReset(this);">&nbsp;</td>
+<td id=aa7 onClick="SetReset(this);">&nbsp;</td>
+<td id=aa8 onClick="SetReset(this);">&nbsp;</td>
+<td id=aa9 onClick="SetReset(this);">&nbsp;</td>
+<td id=aaa onClick="SetReset(this);">&nbsp;</td>
+<td id=aab onClick="SetReset(this);">&nbsp;</td>
+<td id=aac onClick="SetReset(this);">&nbsp;</td>
+<td id=aad onClick="SetReset(this);">&nbsp;</td>
+<td id=aae onClick="SetReset(this);">&nbsp;</td>
+<td id=aaf onClick="SetReset(this);">&nbsp;</td>
+</tr>
+<tr>
+<td id=ab0 onClick="SetReset(this);">&nbsp;</td>
+<td id=ab1 onClick="SetReset(this);">&nbsp;</td>
+<td id=ab2 onClick="SetReset(this);">&nbsp;</td>
+<td id=ab3 onClick="SetReset(this);">&nbsp;</td>
+<td id=ab4 onClick="SetReset(this);">&nbsp;</td>
+<td id=ab5 onClick="SetReset(this);">&nbsp;</td>
+<td id=ab6 onClick="SetReset(this);">&nbsp;</td>
+<td id=ab7 onClick="SetReset(this);">&nbsp;</td>
+<td id=ab8 onClick="SetReset(this);">&nbsp;</td>
+<td id=ab9 onClick="SetReset(this);">&nbsp;</td>
+<td id=aba onClick="SetReset(this);">&nbsp;</td>
+<td id=abb onClick="SetReset(this);">&nbsp;</td>
+<td id=abc onClick="SetReset(this);">&nbsp;</td>
+<td id=abd onClick="SetReset(this);">&nbsp;</td>
+<td id=abe onClick="SetReset(this);">&nbsp;</td>
+<td id=abf onClick="SetReset(this);">&nbsp;</td>
+</tr>
+<tr>
+<td id=ac0 onClick="SetReset(this);">&nbsp;</td>
+<td id=ac1 onClick="SetReset(this);">&nbsp;</td>
+<td id=ac2 onClick="SetReset(this);">&nbsp;</td>
+<td id=ac3 onClick="SetReset(this);">&nbsp;</td>
+<td id=ac4 onClick="SetReset(this);">&nbsp;</td>
+<td id=ac5 onClick="SetReset(this);">&nbsp;</td>
+<td id=ac6 onClick="SetReset(this);">&nbsp;</td>
+<td id=ac7 onClick="SetReset(this);">&nbsp;</td>
+<td id=ac8 onClick="SetReset(this);">&nbsp;</td>
+<td id=ac9 onClick="SetReset(this);">&nbsp;</td>
+<td id=aca onClick="SetReset(this);">&nbsp;</td>
+<td id=acb onClick="SetReset(this);">&nbsp;</td>
+<td id=acc onClick="SetReset(this);">&nbsp;</td>
+<td id=acd onClick="SetReset(this);">&nbsp;</td>
+<td id=ace onClick="SetReset(this);">&nbsp;</td>
+<td id=acf onClick="SetReset(this);">&nbsp;</td>
+</tr>
+<tr>
+<td id=ad0 onClick="SetReset(this);">&nbsp;</td>
+<td id=ad1 onClick="SetReset(this);">&nbsp;</td>
+<td id=ad2 onClick="SetReset(this);">&nbsp;</td>
+<td id=ad3 onClick="SetReset(this);">&nbsp;</td>
+<td id=ad4 onClick="SetReset(this);">&nbsp;</td>
+<td id=ad5 onClick="SetReset(this);">&nbsp;</td>
+<td id=ad6 onClick="SetReset(this);">&nbsp;</td>
+<td id=ad7 onClick="SetReset(this);">&nbsp;</td>
+<td id=ad8 onClick="SetReset(this);">&nbsp;</td>
+<td id=ad9 onClick="SetReset(this);">&nbsp;</td>
+<td id=ada onClick="SetReset(this);">&nbsp;</td>
+<td id=adb onClick="SetReset(this);">&nbsp;</td>
+<td id=adc onClick="SetReset(this);">&nbsp;</td>
+<td id=add onClick="SetReset(this);">&nbsp;</td>
+<td id=ade onClick="SetReset(this);">&nbsp;</td>
+<td id=adf onClick="SetReset(this);">&nbsp;</td>
+</tr>
+<tr>
+<td id=ae0 onClick="SetReset(this);">&nbsp;</td>
+<td id=ae1 onClick="SetReset(this);">&nbsp;</td>
+<td id=ae2 onClick="SetReset(this);">&nbsp;</td>
+<td id=ae3 onClick="SetReset(this);">&nbsp;</td>
+<td id=ae4 onClick="SetReset(this);">&nbsp;</td>
+<td id=ae5 onClick="SetReset(this);">&nbsp;</td>
+<td id=ae6 onClick="SetReset(this);">&nbsp;</td>
+<td id=ae7 onClick="SetReset(this);">&nbsp;</td>
+<td id=ae8 onClick="SetReset(this);">&nbsp;</td>
+<td id=ae9 onClick="SetReset(this);">&nbsp;</td>
+<td id=aea onClick="SetReset(this);">&nbsp;</td>
+<td id=aeb onClick="SetReset(this);">&nbsp;</td>
+<td id=aec onClick="SetReset(this);">&nbsp;</td>
+<td id=aed onClick="SetReset(this);">&nbsp;</td>
+<td id=aee onClick="SetReset(this);">&nbsp;</td>
+<td id=aef onClick="SetReset(this);">&nbsp;</td>
+</tr>
+<tr>
+<td id=af0 onClick="SetReset(this);">&nbsp;</td>
+<td id=af1 onClick="SetReset(this);">&nbsp;</td>
+<td id=af2 onClick="SetReset(this);">&nbsp;</td>
+<td id=af3 onClick="SetReset(this);">&nbsp;</td>
+<td id=af4 onClick="SetReset(this);">&nbsp;</td>
+<td id=af5 onClick="SetReset(this);">&nbsp;</td>
+<td id=af6 onClick="SetReset(this);">&nbsp;</td>
+<td id=af7 onClick="SetReset(this);">&nbsp;</td>
+<td id=af8 onClick="SetReset(this);">&nbsp;</td>
+<td id=af9 onClick="SetReset(this);">&nbsp;</td>
+<td id=afa onClick="SetReset(this);">&nbsp;</td>
+<td id=afb onClick="SetReset(this);">&nbsp;</td>
+<td id=afc onClick="SetReset(this);">&nbsp;</td>
+<td id=afd onClick="SetReset(this);">&nbsp;</td>
+<td id=afe onClick="SetReset(this);">&nbsp;</td>
+<td id=aff onClick="SetReset(this);">&nbsp;</td>
+</tr>
+</table>
+</div>
+</body>
+</html>
