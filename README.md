@@ -7,7 +7,7 @@ I need to draw a font for a project I'm doing using this libs and I don't own of
 
 It's a standalone html page with javascript functions, it have zero dependencies, it doesn't need a server, nor a framework, nor any javascript lib.
 
-It's not beautiful, it just do the job. It doesn't use any 'advanced' HTML/CSS/Javascript technics so, I hope that it's compatibility is close to Universal with any modern Browser.
+It's not beautiful, it just do the job. It doesn't use any 'advanced' HTML/CSS/Javascript technics so, I hope that its compatibility is close to Universal with any modern Browser.
 
 So far (2018.04.01) it have been tested with Firefox 52.7.2 (linux 64bits), Chrome 65.0.3325.181 (Win10 64bits) and Microsoft Edge, both Chrome and Edge show some messed up display but there are no major problems.
 
