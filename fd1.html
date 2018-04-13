@@ -141,6 +141,114 @@ select {
 			}
 		}
 	}
+	function plotStripe() // faz o plot de 16 chars a partir do valor char2save-8 ate char2save+8
+	{
+		var c=document.getElementById('stripe');
+		var s=document.getElementById('char2save');
+		var ctx=c.getContext('2d');
+		var xx, xxtmp, yy, x, y, v, f, st, en;
+		var clen;
+		v=parseInt(s.value);
+		ctx.strokeStyle='white';
+		ctx.fillStyle='white';
+		ctx.clearRect(0,0,ctx.canvas.width, ctx.canvas.height);
+		if(v<16)
+		{
+			st=0;
+			en=15;
+		}
+		else
+		{
+			if(v>=239) // 255-16=239
+			{
+				st=239;
+				en=255;
+			}
+			else
+			{
+				st=(v-8);
+				en=(v+8);
+			}
+		}
+		xx=0;
+		yy=0;
+		for(f=st;f<en;f++)
+		{
+			if(typeof(charSet[f])=='undefined')
+			{
+				ctx.fillStyle='grey';
+				ctx.fillRect(xx, yy, 32, 32 );
+				xx+=33;
+				yy=0;
+				console.log('f='+f+' xx='+xx+' yy='+yy+'\n');
+			}
+			else
+			{
+				console.log('---> '+f+' clen='+clen+'\n');
+				clen=charSet[f][0][16];
+				if(typeof(clen)=='undefined')
+				{
+					clen=8;
+				}
+				for(y=0;y<8;y++)
+				{
+					for(x=0;x<clen;x++)
+					{
+						if(charSet[f][y][x]=='1')
+						{
+							if(f==v)
+							{
+								ctx.fillStyle='red';
+							}
+							else
+							{
+								ctx.fillStyle='white';
+							}
+						}
+						else
+						{
+							ctx.fillStyle='black';
+						}
+						ctx.fillRect(xx, yy, 2, 2);
+						xx+=2;
+					}
+					yy+=2;
+					xx=xx-(clen*2);
+				}
+				if(Max_Y==16) // double height is active
+				{
+					for(y=0;y<8;y++)
+					{
+						for(x=0;x<clen;x++)
+						{
+							if(charSet[(f+128)][y][x]=='1')
+							{
+								if(f==v)
+								{
+									ctx.fillStyle='red';
+								}
+								else
+								{
+									ctx.fillStyle='white';
+								}
+							}
+							else
+							{
+								ctx.fillStyle='black';
+							}
+							ctx.fillRect(xx,yy,2,2);
+							xx+=2;
+						}
+						yy+=2;
+						xx=xx-(clen*2);
+					}
+				}
+				yy=0;
+				xx=xx+(16*2)+2; // o espacamento sao sempre 16*2
+
+			}
+		}
+	}
 	function plotGrid() // desenha a area de trabalho
 	{
 		var x,y,id,g;
@@ -385,9 +493,9 @@ select {
 		var c,v;
 
 		t=document.getElementById("output");
-		if(xx=='undef')
+		if(typeof(xx)!='undefined')
 		{
-			t.value='undef';
+			t.value=xx;
 			return(false);
 		}
 		t.value=Max_X;
@@ -459,6 +567,10 @@ select {
 		{
 			charSet[v][y]=[];
 		}
+		// a largura de um char e' guardado na 17a posicao da primeira linha do caracter
+		// comecou por ser uma martelada, mas depois de pensar no assunto nao encontro uma
+		// maneira melhor
+		charSet[v][0][16]=Max_X; // guardar largura do char
 		if(Max_Y==16)
 		{
 			charSet[(v+128)]=[];
@@ -474,10 +586,6 @@ select {
 				charSet[v][y][x]=matrix[y][x];
 			}
 		}
-		// a largura de um char e' guardado na 17a posicao da primeira linha do caracter
-		// comecou por ser uma martelada, mas depois de pensar no assunto nao encontro uma
-		// maneira melhor
-		charSet[v][0][16]=Max_X; // guardar largura do char
 		if(Max_Y==16) // e' dupla altura, guardar a metade inferior em o.value+128
 		{
 			charSet[(v+128)][0][16]=Max_X; // a largura tambem tem que ser guardada na metade inferior
@@ -490,13 +598,17 @@ select {
 			}
 		}
 		o.value=(v+1);
+		o=document.getElementById('char2load');
+		o.value=(v+1);
 		clearMatrix();
+		loadChar();
 		plotMatrix();
 		plotGrid();
 		showValues();
+		plotStripe();
 	}
 
-	function loadChar() // carrega a matriz a partir de array charSet
+	function loadChar(updateSave) // carrega a matriz a partir de array charSet
 	{
 		var o,s;
 		var x,y;
@@ -516,7 +628,7 @@ select {
 		if(typeof(charSet[v])== 'undefined')
 		{
 			// alert('Nothing is saved at char '+v); // e' discutivel se vale a pena apresentar um erro
-			showValues('undef'); // talvez esta nao seja a melhor solucao
+			showValues('undef // char '+v); // talvez esta nao seja a melhor solucao
 			return(false);
 		}
 		clearMatrix();
@@ -541,6 +653,11 @@ select {
 				}
 			}
 		}
+		if(typeof(updateSave)!='undefined')
+		{
+			o=document.getElementById('char2save')
+			o.value=v;
+		}
 		plotMatrix();
 		plotGrid();
 		showValues();
@@ -556,7 +673,8 @@ select {
 			return(false);
 		}
 		o.value=(v+1);
-		loadChar();
+		loadChar(1);
+		plotStripe();
 	}
 
 	function loadPrevChar() // decrementa o numero do caracter e faz o load a partir do array charSet
@@ -569,7 +687,8 @@ select {
 			return(false);
 		}
 		o.value=(v-1);
-		loadChar();
+		loadChar(1);
+		plotStripe();
 	}
 
 	// from >>>>> https://stackoverflow.com/questions/13405129/javascript-create-and-save-file
@@ -603,7 +722,7 @@ select {
 		var f,x,y,l,bitStr,hexa;
 		var s;
 
-		buffer='MD_MAX72XX::fontType_t myFont[] PROGMEM = {'+EOL;
+		buffer='const MD_MAX72XX::fontType_t myFont[] PROGMEM = {'+EOL;
 
 		for(f=0;f<256;f++)
 		{
@@ -648,9 +767,9 @@ select {
 		s=document.getElementById('h1');
 		s.checked='1';
 		s=document.getElementById('char2load');
-		s.value='0';
+		s.value='32';
 		s=document.getElementById('char2save');
-		s.value='0';
+		s.value='32';
 
 		clearMatrix();
 		plotMatrix();
@@ -664,6 +783,9 @@ select {
 <div id=pic style="position:fixed;top:2;left:720;width:128;height:128;padding:0;margin:0;">
 <canvas id=img width=128 height=128 style="">No canvas support</canvas>
 </div>
+<div id=pic2 style="position:fixed;top:132;left:720;width:512;height:32;padding:0px;margin:0px;">
+<canvas id=stripe width=512 height=32 style="background-color:gray;">No canvas support</canvas>
+</div>
 <div id=control>
 <form name=ctrl>
 <input type=button value="Clear" onClick="clearMatrix();">
@@ -674,6 +796,8 @@ select {
 <input type=button value="Up" onClick="rollUp();">
 <input type=button value="Down" onClick="rollDown();">
 <input type=button value="Right" onClick="rollRight();">
+&nbsp;
+<input type=button value="Show Stripe" onClick="plotStripe();">
 <br><br>
 <input type=radio id=h1 name=h value=1 onClick="Max_Y=8; plotMatrix(); plotGrid(); showValues();" checked> Single height&nbsp;
 <input type=radio id=h2 name=h value=2 onClick="Max_Y=16; plotMatrix(); plotGrid(); showValues();"> Double height&nbsp;
