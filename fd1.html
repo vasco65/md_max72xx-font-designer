@@ -22,9 +22,9 @@
  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
  <meta name="author" content="Antonio Vasconcelos (vasco)">
  <meta name="description" content="Font designer for MD_MAX72XX / MD_PAROLA lib">
- <meta name="version" content="1.0">
- <meta name="date" content="2018.03.31">
-<title>MD_MAX72XX font builder</title>
+ <meta name="version" content="1.1">
+ <meta name="date" content="2018.04.17">
+<title>MD_MAX72XX font designer</title>
 <style>
 body {
         background-color:3030a0;
@@ -180,11 +180,11 @@ select {
 				ctx.fillRect(xx, yy, 32, 32 );
 				xx+=33;
 				yy=0;
-				console.log('f='+f+' xx='+xx+' yy='+yy+'\n');
+				// console.log('f='+f+' xx='+xx+' yy='+yy+'\n');
 			}
 			else
 			{
-				console.log('---> '+f+' clen='+clen+'\n');
+				// console.log('---> '+f+' clen='+clen+'\n');
 				clen=charSet[f][0][16];
 				if(typeof(clen)=='undefined')
 				{
@@ -307,25 +307,16 @@ select {
 		showValues();
 	}
 
-	function rollUp() // rola a matrix um ponto para cima
+	function rollUp() // rola a matrix um ponto para cima - nao tenho maneira de determinar qual dos metodos e mais eficiente
 	{
 		var carry=[];
 		var f,x,y;
-		for(f=0;f<Max_X;f++)
-		{
-			carry[f]=matrix[0][f];
-		}
+		carry=matrix[0].slice();
 		for(y=0;y<(Max_Y-1);y++)
 		{
-			for(x=0;x<Max_X;x++)
-			{
-				matrix[y][x]=matrix[(y+1)][x];
-			}
+			matrix[y]=matrix[(y+1)].slice();
 		}
-		for(f=0;f<Max_X;f++)
-		{
-			matrix[(Max_Y-1)][f]=carry[f];
-		}
+		matrix[(Max_Y-1)]=carry.slice();
 		plotMatrix();
 		plotGrid();
 		showValues();
@@ -335,21 +326,12 @@ select {
 	{
 		var carry=[];
 		var f,x,y;
-		for(f=0;f<Max_X;f++)
-		{
-			carry[f]=matrix[(Max_Y-1)][f];
-		}
+		carry=matrix[(Max_Y-1)].slice();
 		for(y=(Max_Y-1);y>0;y--)
 		{
-			for(x=0;x<Max_X;x++)
-			{
-				matrix[y][x]=matrix[(y-1)][x];
-			}
+			matrix[y]=matrix[(y-1)].slice();
 		}
-		for(f=0;f<Max_X;f++)
-		{
-			matrix[0][f]=carry[f];
-		}
+		matrix[0]=carry.slice();
 		plotMatrix();
 		plotGrid();
 		showValues();
@@ -496,7 +478,7 @@ select {
 		if(typeof(xx)!='undefined')
 		{
 			t.value=xx;
-			return(false);
+//			return(false);
 		}
 		t.value=Max_X;
 
@@ -629,6 +611,11 @@ select {
 		{
 			// alert('Nothing is saved at char '+v); // e' discutivel se vale a pena apresentar um erro
 			showValues('undef // char '+v); // talvez esta nao seja a melhor solucao
+			if(typeof(updateSave)!='undefined')
+			{
+				o=document.getElementById('char2save');
+				o.value=v;
+			}
 			return(false);
 		}
 		clearMatrix();
@@ -777,6 +764,84 @@ select {
 		showValues();
 	}
 
+	function importCharSet(x)
+	{
+		var begin=0, end=0;
+		var x1='', x2='', x3='';
+		var allfile=[], vals=[];
+		var f,char_cnt=0, v_cnt;
+
+		var s;
+
+		begin=x.indexOf('{');
+		end=x.indexOf('}');
+		if(begin<0 || end<0 || begin==end || begin>end)
+		{
+			alert('Array must be enclosed between "{" and "}"');
+			return(false);
+		}
+		x1=x.substring((begin+1), end);
+		x2=x1.replace(/\/\/.*\n/g,"");
+		x1=x2.replace(/ /g,"");
+		allfile=x1.split(',');
+		f=0;
+		while(f<allfile.length)
+		{
+			len=parseInt(allfile[f]);
+			if(len==0)
+			{
+				f++;
+				char_cnt++;
+				continue;
+			}
+			vals=[];
+			v_cnt=0;
+			for(v_cnt=1;v_cnt<=len;v_cnt++)
+			{
+				vals[(v_cnt-1)]=parseInt(allfile[f+v_cnt]);
+			}
+			defineChar(char_cnt, vals);
+			f+=(len+1);
+			char_cnt++;
+		}
+		s=document.getElementById('char2load');
+		s.value='32';
+		s=document.getElementById('char2save');
+		s.value='32';
+		s=document.getElementById('indiv');
+		s.style.display='none';
+		clearMatrix();
+		plotMatrix();
+		plotGrid();
+		plotStripe();
+		showValues();
+	}
+
+	function defineChar(c, v)
+	{
+
+		var binstr,f,x,y;
+
+		charSet[c]=[];
+		for(f=0;f<8;f++)
+		{
+			charSet[c][f]=[];
+		}
+		charSet[c][0][16]=v.length;
+
+		for(x=0;x<v.length;x++)
+		{
+			binstr=v[x].toString(2);
+			while(binstr.length<8) binstr='0'+binstr;
+			
+			for(y=7;y>=0;y--)
+			{
+				charSet[c][y][x]=binstr.charAt((7-y));
+			}
+		}
+	}
+
+
 </script>
 </head>
 <body bgcolor=#3030a0 onLoad="setup();" style="font:9pt Inconsolata;">
@@ -792,12 +857,10 @@ select {
 <input type=button value="Invert" onClick="invertMatrix();">
 <input type=button value="Flip H" onClick="flipMatrixH();">
 <input type=button value="Flip V" onClick="flipMatrixV();">
-<input type=button value="Left" onClick="rollLeft();">
-<input type=button value="Up" onClick="rollUp();">
-<input type=button value="Down" onClick="rollDown();">
-<input type=button value="Right" onClick="rollRight();">
-&nbsp;
-<input type=button value="Show Stripe" onClick="plotStripe();">
+<input type=button value="&ltrif;" style="padding-left:10px;padding-right:10px;" onClick="rollLeft();">
+<input type=button value="&utrif;" style="padding-left:10px;padding-right:10px;" onClick="rollUp();">
+<input type=button value="&dtrif;" style="padding-left:10px;padding-right:10px;" onClick="rollDown();">
+<input type=button value="&rtrif;" style="padding-left:10px;padding-right:10px;" onClick="rollRight();">
 <br><br>
 <input type=radio id=h1 name=h value=1 onClick="Max_Y=8; plotMatrix(); plotGrid(); showValues();" checked> Single height&nbsp;
 <input type=radio id=h2 name=h value=2 onClick="Max_Y=16; plotMatrix(); plotGrid(); showValues();"> Double height&nbsp;
@@ -821,9 +884,9 @@ Width:<select name=width id=width onChange="setWidth();">
 </select>
 <br>
 Values:<br>
-<textarea id=output ROWS=4 COLS=60></textarea>
+<textarea id=output ROWS=4 COLS=60 style="background-color:#3030a0;font:9pt Inconsolata;color:white;border:1px solid black;resize:none;padding:4px;"></textarea>
 <br>
-<table cellpadding=0 cellspacing=0 style="border:0px none black;">
+<table cellpadding=0 cellspacing=0 border=0 style="display:block;width:600px;border:0px none black;">
 <tr>
 <td nowrap style="border:0px none black;">Save to char:</td>
 <td style="border:0px none black;"><input type=text name=char2save id=char2save maxlength=3 size=3></td>
@@ -831,15 +894,22 @@ Values:<br>
 </tr><tr>
 <td nowrap style="border:0px none black;">Load from char:</td>
 <td style="border:0px none black;"><input type=text name=char2load id=char2load maxlength=3 size=3></td>
-<td style="border:0px none black;"><input type=button value="Load" style="float:none;margin-left:10px;" onClick="loadChar();"></td>
-<td style="border:0px none black;"><input type=button value="&nbsp;-&nbsp;" style="float:none;margin-left:10px;" onClick="loadPrevChar();"></td>
-<td style="border:0px none black;"><input type=button value="&nbsp;+&nbsp;" style="float:none;margin-left:10px;" onClick="loadNextChar();"></td>
+<td style="border:0px none black;"><input type=button value="Load" style="float:left;margin-left:10px;" onClick="loadChar();">
+<input type=button value="&ltrif;" style="float:left;margin-left:10px;padding-left:20px;padding-right:20px;" onClick="loadPrevChar();">&nbsp;<input type=button value="&rtrif;" style="float:left;margin-left:10px;padding-left:20px;padding-right:20px;" onClick="loadNextChar();"></td>
 </tr>
 <tr>
-<td colspan=3 align=left style="border:0px none black;"><input type=button value="Export to myFont.h" style="float:none;margin-left:10px;" onClick="exportFont();"></td>
+<td colspan=2 align=left style="border:0px none black;"><input type=button value="Export to myFont.h" style="float:none;margin-left:10px;" onClick="exportFont();"></td>
+<td nowrap style="border:0px none black;font:9pt Inconsolata;">File Format: <input type=radio id=eol name=eol value=0 checked onClick="EOL='\n';">&nbsp;Unix&nbsp;&nbsp;&nbsp;<input type=radio id=eol name=eol value=1 onClick="EOL='\r\n';">&nbsp;MS-DOS</td>
 </tr>
+</table>
+<table cellpadding=0 cellspacing=0 border=0 style="display:block;width:600px;border:0px none black;">
 <tr>
-<td nowrap colspan=3 style="border:0px none black;">File Format: <input type=radio id=eol name=eol value=0 checked onClick="EOL='\n';">&nbsp;Unix&nbsp;&nbsp;&nbsp;<input type=radio id=eol name=eol value=1 onClick="EOL='\r\n';">&nbsp;MS-DOS</td>
+<td colspan=3 nowrap style="border:0px none black;"><input type=button value="Import Charset" style="float:none;margin-left:10px;" onClick="var X=document.getElementById('indiv');if(X.style.display != 'block') { X.style.display='block'; } else { X.style.display='none'; }"></td>
+</tr><tr>
+<td colspan=3 nowrap style="border:0px none black;"><div id=indiv style="display:none;text-align:justify;">
+<textarea id=inarray cols=80 rows=16 style="resize:none;" placeholder="Paste the C array here and press the IMPORT button."></textarea><br>
+<input type=button style="float:none;" value="&nbsp;&nbsp;IMPORT&nbsp;&nbsp;" onClick="importCharSet(document.getElementById('inarray').value);"><input type=button style="float:none;" value="Cancel" onClick="document.getElementById('indiv').style.display='none';"></div>
+</td>
 </tr>
 </table>
 </form>
