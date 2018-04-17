@@ -2,12 +2,17 @@
 Usage of Save and Load buttons can be somewhat confuse, it's easy to overwrite a char you have already stored.
 I need to think a bit more about it.
 [2018.04.13]: It's better now
+[2018.04.17]: Much better now, I think it is fixed.
 
 - 2 -
-Find a way to upload an existing font to edit, I think that http uploads can't be processed without server support.
-Maybe paste the array to a textarea and then parse the text.
+Find a way to upload an existing font for editing, I think that http uploads can't be processed without server support.
+Maybe paste the array into a textarea and then parse the text.
+[2018.04.17]: Done. The parser is not very robust but it's a start.
+
+- 2a -
+Import only one char for a quick fix.
 
 - 3 -
 Implement a smaller char representation where a character can be loaded just by clicking on it.
 There are not much space available and I don't know much about the html canvas, so at the moment I don't have a solution.
-[2018.04.13]: Work in progress, it's kind of ugly and not really usefull but it helps a bit. Navigation is made with the + and - buttons
+[2018.04.13]: Work in progress, it's kind of ugly and not really usefull but it helps a bit. Navigation is made with the > and < buttons. No clicking I'm afraid. It does not work ok with double height chars.
