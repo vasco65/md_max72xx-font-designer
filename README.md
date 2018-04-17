@@ -1,5 +1,7 @@
 # md_max72xx-font-designer
 
+![screenshot](./pics/fd-scr.png)
+
 version 1.1 - 2018-04-17
 
 Simple font designer for md_max72xx / md_parola libs
