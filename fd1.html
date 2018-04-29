@@ -774,22 +774,27 @@ select {
 		var s;
 
 		begin=x.indexOf('{');
-		end=x.indexOf('}');
+		end=x.lastIndexOf('}');
 		if(begin<0 || end<0 || begin==end || begin>end)
 		{
 			alert('Array must be enclosed between "{" and "}"');
 			return(false);
 		}
 		x1=x.substring((begin+1), end);
-		x2=x1.replace(/\/\/.*\n/g,"");
-		x1=x2.replace(/ /g,"");
+		x2=x1.replace(/\/\/.*\n/g,'');
+		x1=x2.replace(/ /g,'');
+		x2=x1.replace(/\t/g,'');
+		x1=x2;
 		allfile=x1.split(',');
 		f=0;
+//		console.log(allfile);
+//		console.log('read '+allfile.length+' elements');
 		while(f<allfile.length)
 		{
 			len=parseInt(allfile[f]);
 			if(len==0)
 			{
+//				console.log('char '+char_cnt+' element '+f+' is empty');
 				f++;
 				char_cnt++;
 				continue;
@@ -801,7 +806,9 @@ select {
 				vals[(v_cnt-1)]=parseInt(allfile[f+v_cnt]);
 			}
 			defineChar(char_cnt, vals);
-			f+=(len+1);
+//			console.log(char_cnt+' - '+vals);
+			f=f+len+1;
+//			console.log('now on element '+f);
 			char_cnt++;
 		}
 		s=document.getElementById('char2load');
