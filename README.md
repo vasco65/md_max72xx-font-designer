@@ -1,6 +1,6 @@
 # md_max72xx-font-designer
 
-![screenshot](./pics/fd1.png)
+![screenshot](./pics/fd1-scr.png)
 
 _version 1.1 - 2018-04-17_
 
