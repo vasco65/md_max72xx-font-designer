@@ -2,7 +2,7 @@
 
 ![screenshot](./pics/fd1-scr.png)
 
-_version 1.1 - 2018-04-17_
+_version 1.3 - 2018-05-03_
 
 Simple font designer for md_max72xx / md_parola libs
 It supports single (8) and double (16) height chars. Maximum width is 16. Each character can have it's own width.
