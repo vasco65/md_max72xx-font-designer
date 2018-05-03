@@ -21,15 +21,15 @@
 <head>
  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
  <meta name="author" content="Antonio Vasconcelos (vasco)">
- <meta name="description" content="Font designer for MD_MAX72XX / MD_PAROLA lib">
- <meta name="version" content="1.1">
- <meta name="date" content="2018.04.17">
+ <meta name="description" content="Font designer for MD_MAX72XX and MD_PAROLA lib">
+ <meta name="version" content="1.2">
+ <meta name="date" content="2018.05.03">
 <title>MD_MAX72XX font designer</title>
 <style>
 body {
         background-color:3030a0;
         text-color:#c0c0c0;
-        font:14pt "Trebuchet MS", Helvetica, sans-serif;
+        font:14pt Tahoma, Carlito;
         color:#c3c3c3;
 }
 table, td, th {
@@ -39,11 +39,6 @@ td {
 	width:40px;
 	height:40px;
 }
-
-input[type=button] {
-	margin:0px;
-	padding:0px;
-	float:left;
 }
 select {
 	padding:0px;
@@ -52,7 +47,7 @@ select {
 	border:none;
 }
 .output {
-	font:7pt Inconsolata;
+	font:7pt Tahoma, Carlito;
 	border-style:none;
 	border-width:1px;
 	border-color:black;
@@ -69,11 +64,66 @@ select {
 	margin:0;
 	border-style:none;
 }
+
+.bt1 {
+	height:32px;
+	padding-top:1px;
+	padding-bottom:1px;
+	padding-left:10px;
+	padding-right:10px;
+	background-color:blue;
+}
+
+.maxbutton {
+  position: relative;
+  text-decoration: none;
+  display: inline-block;
+  vertical-align: middle;
+  border-color: #000;
+  border-top-left-radius: 0px;
+  border-top-right-radius: 0px;
+  border-bottom-left-radius: 0px;
+  border-bottom-right-radius: 0px;
+  border-style: solid;
+  border-width: 1px;
+  background-color: rgba(52, 128, 145, 1);
+  -webkit-box-shadow: 2px 2px 4px 0px #333;
+  -moz-box-shadow: 2px 2px 4px 0px #333;
+  box-shadow: 2px 2px 4px 0px #333; }
+
+.maxbutton:hover {
+  border-color: #000;
+  background-color: rgba(255, 255, 255, 1);
+  -webkit-box-shadow: 2px 2px 4px 0px #333;
+  -moz-box-shadow: 2px 2px 4px 0px #333;
+  box-shadow: 2px 2px 4px 0px #333; }
+
+.maxbutton .mb-text {
+  color: #fff;
+  font-family: Tahoma;
+  font-size: 11px;
+  text-align: center;
+  font-style: normal;
+  font-weight: normal;
+  padding-top: 3px;
+  padding-right: 10px;
+  padding-bottom: 3px;
+  padding-left: 10px;
+  line-height: 1em;
+  box-sizing: border-box;
+  display: block;
+  background-color: unset;
+  position: relative; }
+
+.maxbutton:hover .mb-text {
+  color: #000; }
+  
 </style>
 <script>
 	// Variaveis Globais
 	var charSet=[];
 	var matrix=[];
+	var matrix_copy=[];
 	var x,y;
 	var Max_X=8; // valor inicial e' 8x8
 	var Max_Y=8;
@@ -84,6 +134,7 @@ select {
 	for(y=0;y<16;y++)
 	{
 			matrix[y]=[];
+			matrix_copy[y]=[];
 	}
 	for(y=0;y<16;y++)
 	{
@@ -92,6 +143,36 @@ select {
 			matrix[y][x]='0';
 		}
 	}
+	
+	function copyMatrix()
+	{
+		var x,y;
+		
+		for(y=0;y<16;y++)
+		{
+			for(x=0;x<16;x++)
+			{
+				matrix_copy[y][x]=matrix[y][x];
+			}
+		}
+	}
+	
+	function pasteMatrix()
+	{
+		var x,y;
+		
+		for(y=0;y<16;y++)
+		{
+			for(x=0;x<16;x++)
+			{
+				matrix[y][x]=matrix_copy[y][x];
+			}
+		}
+		plotMatrix();
+		plotGrid();
+		showValues();
+	}
+	
 
 	/////////////////////////////////////////////////////
 
@@ -770,6 +851,7 @@ select {
 		var x1='', x2='', x3='';
 		var allfile=[], vals=[];
 		var f,char_cnt=0, v_cnt;
+		var importedChars=0;
 
 		var s;
 
@@ -799,6 +881,7 @@ select {
 				char_cnt++;
 				continue;
 			}
+			importedChars++;
 			vals=[];
 			v_cnt=0;
 			for(v_cnt=1;v_cnt<=len;v_cnt++)
@@ -822,6 +905,7 @@ select {
 		plotGrid();
 		plotStripe();
 		showValues();
+		alert('Completed: Imported '+importedChars+' characters.');
 	}
 
 	function defineChar(c, v)
@@ -860,14 +944,14 @@ select {
 </div>
 <div id=control>
 <form name=ctrl>
-<input type=button value="Clear" onClick="clearMatrix();">
-<input type=button value="Invert" onClick="invertMatrix();">
-<input type=button value="Flip H" onClick="flipMatrixH();">
-<input type=button value="Flip V" onClick="flipMatrixV();">
-<input type=button value="&ltrif;" style="padding-left:10px;padding-right:10px;" onClick="rollLeft();">
-<input type=button value="&utrif;" style="padding-left:10px;padding-right:10px;" onClick="rollUp();">
-<input type=button value="&dtrif;" style="padding-left:10px;padding-right:10px;" onClick="rollDown();">
-<input type=button value="&rtrif;" style="padding-left:10px;padding-right:10px;" onClick="rollRight();">
+<input type=button value="Clear" class=maxbutton onClick="clearMatrix();">
+<input type=button value="Invert" class=maxbutton onClick="invertMatrix();">
+<input type=button value="Flip H" class=maxbutton onClick="flipMatrixH();">
+<input type=button value="Flip V" class=maxbutton onClick="flipMatrixV();">
+<input type=button value="&ltrif;" class=maxbutton onClick="rollLeft();">
+<input type=button value="&utrif;" class=maxbutton onClick="rollUp();">
+<input type=button value="&dtrif;" class=maxbutton onClick="rollDown();">
+<input type=button value="&rtrif;" class=maxbutton onClick="rollRight();">
 <br><br>
 <input type=radio id=h1 name=h value=1 onClick="Max_Y=8; plotMatrix(); plotGrid(); showValues();" checked> Single height&nbsp;
 <input type=radio id=h2 name=h value=2 onClick="Max_Y=16; plotMatrix(); plotGrid(); showValues();"> Double height&nbsp;
@@ -891,31 +975,33 @@ Width:<select name=width id=width onChange="setWidth();">
 </select>
 <br>
 Values:<br>
-<textarea id=output ROWS=4 COLS=60 style="background-color:#3030a0;font:9pt Inconsolata;color:white;border:1px solid black;resize:none;padding:4px;"></textarea>
+<textarea id=output readonly ROWS=4 COLS=60 style="background-color:#3030a0;font:9pt Inconsolata;color:white;border:1px solid black;resize:none;padding:4px;"></textarea>
 <br>
 <table cellpadding=0 cellspacing=0 border=0 style="display:block;width:600px;border:0px none black;">
 <tr>
 <td nowrap style="border:0px none black;">Save to char:</td>
-<td style="border:0px none black;"><input type=text name=char2save id=char2save maxlength=3 size=3></td>
-<td style="border:0px none black;"><input type=button value="Save" style="float:none;margin-left:10px;" onClick="saveChar();"></td>
+<td style="border:0px none black;"><input type=text name=char2save id=char2save maxlength=3 size=3 style="text-align:right;"></td>
+<td nowrap style="border:0px none black;">&nbsp;&nbsp;<input type=button value="Save" class=maxbutton onClick="saveChar();">
+<input type=button value="Copy" class=maxbutton onClick="copyMatrix();">
+<input type=button value="Paste" class=maxbutton onClick="pasteMatrix();">&nbsp;
+</td>
 </tr><tr>
 <td nowrap style="border:0px none black;">Load from char:</td>
-<td style="border:0px none black;"><input type=text name=char2load id=char2load maxlength=3 size=3></td>
-<td style="border:0px none black;"><input type=button value="Load" style="float:left;margin-left:10px;" onClick="loadChar();">
-<input type=button value="&ltrif;" style="float:left;margin-left:10px;padding-left:20px;padding-right:20px;" onClick="loadPrevChar();">&nbsp;<input type=button value="&rtrif;" style="float:left;margin-left:10px;padding-left:20px;padding-right:20px;" onClick="loadNextChar();"></td>
+<td style="border:0px none black;"><input type=text name=char2load id=char2load maxlength=3 size=3 style="text-align:right;"></td>
+<td style="border:0px none black;" nowrap>&nbsp;<input type=button value="Load" class=maxbutton onClick="loadChar();">&nbsp;<input type=button value="&ltrif;" class=maxbutton onClick="loadPrevChar();">&nbsp;<input type=button value="&rtrif;" class=maxbutton onClick="loadNextChar();"></td>
 </tr>
 <tr>
-<td colspan=2 align=left style="border:0px none black;"><input type=button value="Export to myFont.h" style="float:none;margin-left:10px;" onClick="exportFont();"></td>
+<td colspan=2 align=left style="border:0px none black;"><input type=button value="Export to myFont.h" class=maxbutton onClick="exportFont();"></td>
 <td nowrap style="border:0px none black;font:9pt Inconsolata;">File Format: <input type=radio id=eol name=eol value=0 checked onClick="EOL='\n';">&nbsp;Unix&nbsp;&nbsp;&nbsp;<input type=radio id=eol name=eol value=1 onClick="EOL='\r\n';">&nbsp;MS-DOS</td>
 </tr>
 </table>
 <table cellpadding=0 cellspacing=0 border=0 style="display:block;width:600px;border:0px none black;">
 <tr>
-<td colspan=3 nowrap style="border:0px none black;"><input type=button value="Import Charset" style="float:none;margin-left:10px;" onClick="var X=document.getElementById('indiv');if(X.style.display != 'block') { X.style.display='block'; } else { X.style.display='none'; }"></td>
+<td colspan=3 nowrap style="border:0px none black;"><input type=button value="Import Charset" class=maxbutton onClick="var X=document.getElementById('indiv');if(X.style.display != 'block') { X.style.display='block'; } else { X.style.display='none'; }"></td>
 </tr><tr>
 <td colspan=3 nowrap style="border:0px none black;"><div id=indiv style="display:none;text-align:justify;">
 <textarea id=inarray cols=80 rows=16 style="resize:none;" placeholder="Paste the C array here and press the IMPORT button."></textarea><br>
-<input type=button style="float:none;" value="&nbsp;&nbsp;IMPORT&nbsp;&nbsp;" onClick="importCharSet(document.getElementById('inarray').value);"><input type=button style="float:none;" value="Cancel" onClick="document.getElementById('indiv').style.display='none';"></div>
+<input type=button class=maxbutton value="&nbsp;&nbsp;IMPORT&nbsp;&nbsp;" onClick="importCharSet(document.getElementById('inarray').value);"><input type=button class=maxbutton value="Cancel" onClick="document.getElementById('indiv').style.display='none';"></div>
 </td>
 </tr>
 </table>
