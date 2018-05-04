@@ -22,12 +22,12 @@
  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
  <meta name="author" content="Antonio Vasconcelos (vasco)">
  <meta name="description" content="Font designer for MD_MAX72XX and MD_PAROLA lib">
- <meta name="version" content="1.2">
- <meta name="date" content="2018.05.03">
+ <meta name="version" content="1.0.4">
+ <meta name="date" content="2018.05.05">
 <title>MD_MAX72XX font designer</title>
 <style>
 body {
-        background-color:3030a0;
+		background-color:teal;
         text-color:#c0c0c0;
         font:14pt Tahoma, Carlito;
         color:#c3c3c3;
@@ -41,10 +41,12 @@ td {
 }
 }
 select {
+	font:7pt Tahoma;
 	padding:0px;
 	background-color:#5050c0;
 	color:#c3c3c3;
 	border:none;
+	text-align:right;
 }
 .output {
 	font:7pt Tahoma, Carlito;
@@ -80,10 +82,10 @@ select {
   display: inline-block;
   vertical-align: middle;
   border-color: #000;
-  border-top-left-radius: 0px;
-  border-top-right-radius: 0px;
-  border-bottom-left-radius: 0px;
-  border-bottom-right-radius: 0px;
+  border-top-left-radius: 2px;
+  border-top-right-radius: 2px;
+  border-bottom-left-radius: 2px;
+  border-bottom-right-radius: 2px;
   border-style: solid;
   border-width: 1px;
   background-color: rgba(52, 128, 145, 1);
@@ -146,7 +148,9 @@ select {
 	
 	function copyMatrix()
 	{
-		var x,y;
+		var x,y,c;
+		
+		c=document.getElementById('pasteBut');
 		
 		for(y=0;y<16;y++)
 		{
@@ -155,6 +159,7 @@ select {
 				matrix_copy[y][x]=matrix[y][x];
 			}
 		}
+		c.disabled=false;
 	}
 	
 	function pasteMatrix()
@@ -224,6 +229,11 @@ select {
 	}
 	function plotStripe() // faz o plot de 16 chars a partir do valor char2save-8 ate char2save+8
 	{
+		var c_bg='teal';
+		var c_on='white';
+		var c_off='black';
+		var c_spot='orange';
+		
 		var c=document.getElementById('stripe');
 		var s=document.getElementById('char2save');
 		var ctx=c.getContext('2d');
@@ -257,9 +267,9 @@ select {
 		{
 			if(typeof(charSet[f])=='undefined')
 			{
-				ctx.fillStyle='grey';
+				ctx.fillStyle=c_bg;
 				ctx.fillRect(xx, yy, 32, 32 );
-				xx+=33;
+				xx+=32;
 				yy=0;
 				// console.log('f='+f+' xx='+xx+' yy='+yy+'\n');
 			}
@@ -279,16 +289,16 @@ select {
 						{
 							if(f==v)
 							{
-								ctx.fillStyle='red';
+								ctx.fillStyle=c_spot;
 							}
 							else
 							{
-								ctx.fillStyle='white';
+								ctx.fillStyle=c_on;
 							}
 						}
 						else
 						{
-							ctx.fillStyle='black';
+							ctx.fillStyle=c_off;
 						}
 						ctx.fillRect(xx, yy, 2, 2);
 						xx+=2;
@@ -298,34 +308,45 @@ select {
 				}
 				if(Max_Y==16) // double height is active
 				{
-					for(y=0;y<8;y++)
+					if(typeof(charSet[(f+128)])=='undefined')
 					{
-						for(x=0;x<clen;x++)
+						ctx.fillStyle=c_bg;
+						ctx.fillRect(xx, yy, 32, 32 );
+						//xx+=32;
+						yy=16;
+						// console.log('f='+f+' xx='+xx+' yy='+yy+'\n');
+					}
+					else
+					{
+						for(y=0;y<8;y++)
 						{
-							if(charSet[(f+128)][y][x]=='1')
+							for(x=0;x<clen;x++)
 							{
-								if(f==v)
+								if(charSet[(f+128)][y][x]=='1')
 								{
-									ctx.fillStyle='red';
+									if(f==v)
+									{
+										ctx.fillStyle=c_spot;
+									}
+									else
+									{
+										ctx.fillStyle=c_on;
+									}
 								}
 								else
 								{
-									ctx.fillStyle='white';
+									ctx.fillStyle=c_off;
 								}
+								ctx.fillRect(xx,yy,2,2);
+								xx+=2;
 							}
-							else
-							{
-								ctx.fillStyle='black';
-							}
-							ctx.fillRect(xx,yy,2,2);
-							xx+=2;
+							yy+=2;
+							xx=xx-(clen*2);
 						}
-						yy+=2;
-						xx=xx-(clen*2);
 					}
 				}
 				yy=0;
-				xx=xx+(16*2)+2; // o espacamento sao sempre 16*2
+				xx+=32; // o espacamento sao sempre 16*2
 
 			}
 		}
@@ -713,11 +734,14 @@ select {
 		}
 		if(Max_Y==16)
 		{
-			for(y=0;y<8;y++)
+			if(typeof(charSet[(v+128)])!='undefined')
 			{
-				for(x=0;x<16;x++)
+				for(y=0;y<8;y++)
 				{
-					matrix[(y+8)][x]=charSet[(v+128)][y][x];
+					for(x=0;x<16;x++)
+					{
+						matrix[(y+8)][x]=charSet[(v+128)][y][x];
+					}
 				}
 			}
 		}
@@ -940,7 +964,7 @@ select {
 <canvas id=img width=128 height=128 style="">No canvas support</canvas>
 </div>
 <div id=pic2 style="position:fixed;top:132;left:720;width:512;height:32;padding:0px;margin:0px;">
-<canvas id=stripe width=512 height=32 style="background-color:gray;">No canvas support</canvas>
+<canvas id=stripe width=512 height=32 style="background-color:teal;">No canvas support</canvas>
 </div>
 <div id=control>
 <form name=ctrl>
@@ -983,7 +1007,7 @@ Values:<br>
 <td style="border:0px none black;"><input type=text name=char2save id=char2save maxlength=3 size=3 style="text-align:right;"></td>
 <td nowrap style="border:0px none black;">&nbsp;&nbsp;<input type=button value="Save" class=maxbutton onClick="saveChar();">
 <input type=button value="Copy" class=maxbutton onClick="copyMatrix();">
-<input type=button value="Paste" class=maxbutton onClick="pasteMatrix();">&nbsp;
+<input type=button id=pasteBut value="Paste" class=maxbutton onClick="pasteMatrix();" disabled>&nbsp;
 </td>
 </tr><tr>
 <td nowrap style="border:0px none black;">Load from char:</td>
